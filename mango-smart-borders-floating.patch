@@ -1,0 +1,29 @@
+--- a/src/animation/client.h
++++ b/src/animation/client.h
+@@ -324,7 +324,7 @@
+ 			wlr_scene_node_set_enabled(&c->shadow->node, true);
+ 	}
+ 
+-	bool hit_no_border = check_hit_no_border(c);
++	bool hit_no_border = ISTILED(c) && check_hit_no_border(c);
+ 	struct fx_corner_radii current_corner_location =
+ 		c->isfullscreen || (config.no_radius_when_single && c->mon &&
+ 							c->mon->visible_tiling_clients == 1)
+@@ -649,7 +649,7 @@
+ 			wlr_scene_node_set_enabled(&c->border->node, true);
+ 	}
+ 
+-	bool hit_no_border = check_hit_no_border(c);
++	bool hit_no_border = ISTILED(c) && check_hit_no_border(c);
+ 	client_draw_split_border(c, hit_no_border, offsets);
+ 
+ 	struct fx_corner_radii current_corner_location =
+@@ -1379,7 +1379,7 @@
+ 	if (c->isnoborder || c->iskilling)
+ 		c->bw = 0;
+ 
+-	bool hit_no_border = check_hit_no_border(c);
++	bool hit_no_border = ISTILED(c) && check_hit_no_border(c);
+ 	if (hit_no_border && config.smartgaps) {
+ 		c->bw = 0;
+ 		c->fake_no_border = true;
