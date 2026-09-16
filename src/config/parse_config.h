@@ -347,6 +347,7 @@ typedef struct {
 	float scratchpad_height_ratio;
 	float rootcolor[4];
 	float bordercolor[4];
+	float floatingcolor[4];
 	float dropcolor[4];
 	float splitcolor[4];
 	float focuscolor[4];
@@ -2036,6 +2037,17 @@ bool parse_option(Config *config, char *key, char *value) {
 			return false;
 		} else {
 			convert_hex_to_rgba(config->bordercolor, color);
+		}
+	} else if (strcmp(key, "floatingcolor") == 0) {
+		int64_t color = parse_color(value);
+		if (color == -1) {
+			fprintf(stderr,
+					"\033[1m\033[31m[ERROR]:\033[33m Invalid floatingcolor "
+					"format: %s\n",
+					value);
+			return false;
+		} else {
+			convert_hex_to_rgba(config->floatingcolor, color);
 		}
 	} else if (strcmp(key, "dropcolor") == 0) {
 		int64_t color = parse_color(value);
@@ -3914,6 +3926,10 @@ void set_value_default() {
 	config.bordercolor[1] = 0x44 / 255.0f;
 	config.bordercolor[2] = 0x44 / 255.0f;
 	config.bordercolor[3] = 1.0f;
+	config.floatingcolor[0] = 0x89 / 255.0f;
+	config.floatingcolor[1] = 0xb4 / 255.0f;
+	config.floatingcolor[2] = 0xfa / 255.0f;
+	config.floatingcolor[3] = 1.0f;
 	config.dropcolor[0] = 0xd5 / 255.0f;
 	config.dropcolor[1] = 0x89 / 255.0f;
 	config.dropcolor[2] = 0x9d / 255.0f;

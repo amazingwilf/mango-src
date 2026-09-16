@@ -367,6 +367,8 @@ float *get_border_color(Client *c) {
 		return config.overlaycolor;
 	} else if (c->ismaximizescreen && selmon && c == selmon->sel) {
 		return config.maximizescreencolor;
+	} else if (c->isfloating) {
+		return config.floatingcolor;
 	} else if (selmon && c == selmon->sel) {
 		return config.focuscolor;
 	} else {
