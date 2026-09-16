@@ -1,0 +1,132 @@
+diff --git a/assets/config.conf b/assets/config.conf
+index 09707dc..d53d258 100644
+--- a/assets/config.conf
++++ b/assets/config.conf
+@@ -130,6 +130,7 @@ scratchpad_height_ratio=0.9
+ borderpx=4
+ rootcolor=0x201b14ff
+ bordercolor=0x444444ff
++floatingcolor=0x89b4faff
+ dropcolor=0x8FBA7C55
+ splitcolor=0xEB441EFF
+ focuscolor=0xc9b890ff
+diff --git a/docs/visuals/theming.md b/docs/visuals/theming.md
+index 75c90f3..34cb56c 100644
+--- a/docs/visuals/theming.md
++++ b/docs/visuals/theming.md
+@@ -25,6 +25,7 @@ rootcolor=0x323232ff
+ 
+ # Inactive window border
+ bordercolor=0x444444ff
++floatingcolor=0x89b4faff
+ 
+ # Drop shadow when dragging windows
+ dropcolor=0x8FBA7C55
+diff --git a/src/animation/client.h b/src/animation/client.h
+index 8f7f3ef..4e8c0d8 100644
+--- a/src/animation/client.h
++++ b/src/animation/client.h
+@@ -295,8 +295,9 @@ void buffer_set_effect(Client *c, BufferData data) {
+ 	if (c == grabc)
+ 		data.should_scale = false;
+ 
+-	if (c->isfullscreen || (config.no_radius_when_single && c->mon &&
+-							c->mon->visible_tiling_clients == 1))
++	if (c->isfullscreen ||
++		(!c->isfloating && config.no_radius_when_single && c->mon &&
++		 c->mon->visible_tiling_clients == 1))
+ 		data.corner_location = corner_radii_none();
+ 
+ 	if (config.blur && !c->noblur)
+@@ -326,8 +327,9 @@ void client_draw_shadow(Client *c, struct ivec2 offsets) {
+ 
+ 	bool hit_no_border = ISTILED(c) && check_hit_no_border(c);
+ 	struct fx_corner_radii current_corner_location =
+-		c->isfullscreen || (config.no_radius_when_single && c->mon &&
+-							c->mon->visible_tiling_clients == 1)
++		c->isfullscreen ||
++				(!c->isfloating && config.no_radius_when_single && c->mon &&
++				 c->mon->visible_tiling_clients == 1)
+ 			? corner_radii_none()
+ 			: set_client_corner_location(c);
+ 
+@@ -653,8 +655,9 @@ void client_draw_border(Client *c, struct ivec2 offsets) {
+ 	client_draw_split_border(c, hit_no_border, offsets);
+ 
+ 	struct fx_corner_radii current_corner_location =
+-		c->isfullscreen || (config.no_radius_when_single && c->mon &&
+-							c->mon->visible_tiling_clients == 1)
++		c->isfullscreen ||
++				(!c->isfloating && config.no_radius_when_single && c->mon &&
++				 c->mon->visible_tiling_clients == 1)
+ 			? corner_radii_none()
+ 			: set_client_corner_location(c);
+ 
+@@ -1614,4 +1617,4 @@ bool client_draw_frame(Client *c) {
+ 	bool need_fade_focus = client_apply_focus_opacity(c);
+ 
+ 	return need_next_tick || need_fade_focus;
+-}
+\ No newline at end of file
++}
+diff --git a/src/config/parse_config.h b/src/config/parse_config.h
+index 1195896..682b2fd 100644
+--- a/src/config/parse_config.h
++++ b/src/config/parse_config.h
+@@ -347,6 +347,7 @@ typedef struct {
+ 	float scratchpad_height_ratio;
+ 	float rootcolor[4];
+ 	float bordercolor[4];
++	float floatingcolor[4];
+ 	float dropcolor[4];
+ 	float splitcolor[4];
+ 	float focuscolor[4];
+@@ -2037,6 +2038,17 @@ bool parse_option(Config *config, char *key, char *value) {
+ 		} else {
+ 			convert_hex_to_rgba(config->bordercolor, color);
+ 		}
++	} else if (strcmp(key, "floatingcolor") == 0) {
++		int64_t color = parse_color(value);
++		if (color == -1) {
++			fprintf(stderr,
++					"\033[1m\033[31m[ERROR]:\033[33m Invalid floatingcolor "
++					"format: %s\n",
++					value);
++			return false;
++		} else {
++			convert_hex_to_rgba(config->floatingcolor, color);
++		}
+ 	} else if (strcmp(key, "dropcolor") == 0) {
+ 		int64_t color = parse_color(value);
+ 		if (color == -1) {
+@@ -3914,6 +3926,10 @@ void set_value_default() {
+ 	config.bordercolor[1] = 0x44 / 255.0f;
+ 	config.bordercolor[2] = 0x44 / 255.0f;
+ 	config.bordercolor[3] = 1.0f;
++	config.floatingcolor[0] = 0x89 / 255.0f;
++	config.floatingcolor[1] = 0xb4 / 255.0f;
++	config.floatingcolor[2] = 0xfa / 255.0f;
++	config.floatingcolor[3] = 1.0f;
+ 	config.dropcolor[0] = 0xd5 / 255.0f;
+ 	config.dropcolor[1] = 0x89 / 255.0f;
+ 	config.dropcolor[2] = 0x9d / 255.0f;
+diff --git a/src/fetch/client.h b/src/fetch/client.h
+index 89279ed..1ca0606 100644
+--- a/src/fetch/client.h
++++ b/src/fetch/client.h
+@@ -367,6 +367,8 @@ float *get_border_color(Client *c) {
+ 		return config.overlaycolor;
+ 	} else if (c->ismaximizescreen && selmon && c == selmon->sel) {
+ 		return config.maximizescreencolor;
++	} else if (c->isfloating) {
++		return config.floatingcolor;
+ 	} else if (selmon && c == selmon->sel) {
+ 		return config.focuscolor;
+ 	} else {
+@@ -459,4 +461,4 @@ Client *get_focused_stack_client(Client *sc, Client *custom_focus_client) {
+ 		}
+ 	}
+ 	return sc;
+-}
+\ No newline at end of file
++}
